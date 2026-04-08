@@ -250,101 +250,275 @@ def create_report(data=None, template_path=None):
     # 5.1.1 干沥青直线制动
     add_heading_with_number(doc, '5.1.1 干沥青直线制动', 3)
     
-    # ABS测试结果字段定义
-    abs_test_fields = [
-        '测试路面',
-        '测试项目',
-        '测试次数',
-        '平均减速度(m/s²)',
-        '制动距离(m)',
-        '减速度相邻峰谷差值(m/s²)',
-        '转向修正角(deg)',
-        '单次循环车轮滑移率抱死时间(s)',
-        '路面附着系数',
-        '附着系数利用率',
-        '主观评分',
-        '主观评价',
-        '结论'
-    ]
-    
-    # 干沥青直线制动测试结果表格
+    # 检查是否使用新格式数据
     if data and 'abs_straight_braking' in data:
         straight_data = data['abs_straight_braking']
-        straight_table = doc.add_table(rows=len(abs_test_fields) + 1, cols=3)
-        straight_table.style = 'Table Grid'
         
-        # 表头
-        hdr_cells = straight_table.rows[0].cells
-        hdr_cells[0].text = '字段'
-        hdr_cells[1].text = '测试要求'
-        hdr_cells[2].text = '实测值'
-        for cell in hdr_cells:
-            set_cell_shading(cell, 'D9E2F3')
-        
-        # 数据行
-        for i, field in enumerate(abs_test_fields):
-            row_cells = straight_table.rows[i + 1].cells
-            row_cells[0].text = field
-            row_cells[1].text = straight_data.get('requirements', {}).get(field, '【待填写】')
-            row_cells[2].text = straight_data.get('measured', {}).get(field, '【待填写】')
+        # 检查是否为新格式（包含test_items）
+        if 'test_items' in straight_data:
+            # 新格式：多车速、三次测试
+            test_conditions = straight_data.get('test_conditions', {})
+            
+            # 测试条件
+            doc.add_paragraph('测试条件：', style='Heading 4')
+            cond_para = doc.add_paragraph()
+            cond_para.add_run(f"• 测试路面：{test_conditions.get('测试路面', '【待填写】')}\n")
+            cond_para.add_run(f"• 路面附着系数：{test_conditions.get('路面附着系数', '【待填写】')}\n")
+            cond_para.add_run(f"• 测试环境：温度{test_conditions.get('测试温度', '【待填写】')}℃，湿度{test_conditions.get('测试湿度', '【待填写】')}%\n")
+            
+            doc.add_paragraph('测试结果记录表：', style='Heading 4')
+            
+            # 创建表格
+            test_items = straight_data.get('test_items', [])
+            # 计算总行数：每个车速4行（3次测试+平均）+ 1行要求值 + 1行表头
+            total_rows = sum(len(item.get('test_runs', [])) + 1 for item in test_items) + 2
+            
+            table = doc.add_table(rows=total_rows, cols=9)
+            table.style = 'Table Grid'
+            
+            # 表头
+            headers = ['测试项目\n(车速)', '测试\n序号', '平均减速度\n(m/s²)', '制动距离\n(m)', 
+                      '减速度相邻\n峰谷差值(m/s²)', '转向修正角\n(deg)', '车轮抱死\n时间(s)', 
+                      '附着系数\n利用率(%)', '结论']
+            hdr_cells = table.rows[0].cells
+            for i, header in enumerate(headers):
+                hdr_cells[i].text = header
+                set_cell_shading(hdr_cells[i], 'D9E2F3')
+            
+            # 填充数据
+            row_idx = 1
+            for item in test_items:
+                speed = item.get('车速', '【待填写】')
+                test_runs = item.get('test_runs', [])
+                average = item.get('average', {})
+                
+                # 三次测试
+                for run in test_runs:
+                    cells = table.rows[row_idx].cells
+                    cells[0].text = f"{speed} km/h" if run.get('序号') == 1 else ''
+                    cells[1].text = str(run.get('序号', ''))
+                    cells[2].text = str(run.get('平均减速度', ''))
+                    cells[3].text = str(run.get('制动距离', ''))
+                    cells[4].text = str(run.get('减速度峰谷差值', ''))
+                    cells[5].text = str(run.get('转向修正角', ''))
+                    cells[6].text = str(run.get('车轮抱死时间', ''))
+                    cells[7].text = str(run.get('附着系数利用率', ''))
+                    cells[8].text = run.get('结论', '')
+                    row_idx += 1
+                
+                # 平均值
+                cells = table.rows[row_idx].cells
+                cells[0].text = ''
+                cells[1].text = '平均'
+                cells[2].text = str(average.get('平均减速度', ''))
+                cells[3].text = str(average.get('制动距离', ''))
+                cells[4].text = str(average.get('减速度峰谷差值', ''))
+                cells[5].text = str(average.get('转向修正角', ''))
+                cells[6].text = str(average.get('车轮抱死时间', ''))
+                cells[7].text = str(average.get('附着系数利用率', ''))
+                cells[8].text = average.get('结论', '')
+                # 平均值行加粗
+                for cell in cells:
+                    for paragraph in cell.paragraphs:
+                        for run in paragraph.runs:
+                            run.bold = True
+                row_idx += 1
+            
+            # 要求值
+            requirements = test_items[0].get('requirements', {}) if test_items else {}
+            cells = table.rows[row_idx].cells
+            cells[0].text = '要求值'
+            cells[1].text = '-'
+            cells[2].text = requirements.get('平均减速度', '【待填写】')
+            cells[3].text = requirements.get('制动距离', '【待填写】')
+            cells[4].text = requirements.get('减速度峰谷差值', '【待填写】')
+            cells[5].text = requirements.get('转向修正角', '【待填写】')
+            cells[6].text = requirements.get('车轮抱死时间', '【待填写】')
+            cells[7].text = requirements.get('附着系数利用率', '【待填写】')
+            cells[8].text = '通过'
+            for cell in cells:
+                set_cell_shading(cell, 'FFF2CC')
+            
+            # 主观评价
+            subjective = straight_data.get('subjective_evaluation', '【待填写】')
+            doc.add_paragraph(f"\n主观评价：{subjective}")
+            
+        else:
+            # 旧格式兼容
+            abs_test_fields = [
+                '测试路面', '测试项目', '测试次数', '平均减速度(m/s²)',
+                '制动距离(m)', '减速度相邻峰谷差值(m/s²)', '转向修正角(deg)',
+                '单次循环车轮滑移率抱死时间(s)', '路面附着系数', '附着系数利用率',
+                '主观评分', '主观评价', '结论'
+            ]
+            
+            straight_table = doc.add_table(rows=len(abs_test_fields) + 1, cols=3)
+            straight_table.style = 'Table Grid'
+            
+            hdr_cells = straight_table.rows[0].cells
+            hdr_cells[0].text = '字段'
+            hdr_cells[1].text = '测试要求'
+            hdr_cells[2].text = '实测值'
+            for cell in hdr_cells:
+                set_cell_shading(cell, 'D9E2F3')
+            
+            for i, field in enumerate(abs_test_fields):
+                row_cells = straight_table.rows[i + 1].cells
+                row_cells[0].text = field
+                row_cells[1].text = straight_data.get('requirements', {}).get(field, '【待填写】')
+                row_cells[2].text = straight_data.get('measured', {}).get(field, '【待填写】')
     else:
-        # 空白模板表格
-        straight_table = doc.add_table(rows=len(abs_test_fields) + 1, cols=2)
-        straight_table.style = 'Table Grid'
+        # 空白模板
+        doc.add_paragraph('测试条件：', style='Heading 4')
+        doc.add_paragraph('• 测试路面：【待填写】\n• 路面附着系数：【待填写】\n• 测试环境：温度【待填写】℃，湿度【待填写】%')
         
-        # 表头
-        hdr_cells = straight_table.rows[0].cells
-        hdr_cells[0].text = '字段'
-        hdr_cells[1].text = '测试要求'
-        for cell in hdr_cells:
-            set_cell_shading(cell, 'D9E2F3')
+        doc.add_paragraph('测试结果记录表：', style='Heading 4')
+        table = doc.add_table(rows=15, cols=9)
+        table.style = 'Table Grid'
         
-        # 数据行
-        for i, field in enumerate(abs_test_fields):
-            row_cells = straight_table.rows[i + 1].cells
-            row_cells[0].text = field
-            row_cells[1].text = '【待填写】'
+        headers = ['测试项目\n(车速)', '测试\n序号', '平均减速度\n(m/s²)', '制动距离\n(m)', 
+                  '减速度相邻\n峰谷差值(m/s²)', '转向修正角\n(deg)', '车轮抱死\n时间(s)', 
+                  '附着系数\n利用率(%)', '结论']
+        hdr_cells = table.rows[0].cells
+        for i, header in enumerate(headers):
+            hdr_cells[i].text = header
+            set_cell_shading(hdr_cells[i], 'D9E2F3')
+        
+        for row in table.rows[1:]:
+            for cell in row.cells:
+                cell.text = '【待填写】'
+        
+        doc.add_paragraph('\n主观评价：【待填写】')
     
     # 5.1.2 干沥青弯道制动
     add_heading_with_number(doc, '5.1.2 干沥青弯道制动', 3)
     
-    # 干沥青弯道制动测试结果表格
     if data and 'abs_curve_braking' in data:
         curve_data = data['abs_curve_braking']
-        curve_table = doc.add_table(rows=len(abs_test_fields) + 1, cols=3)
-        curve_table.style = 'Table Grid'
         
-        # 表头
-        hdr_cells = curve_table.rows[0].cells
-        hdr_cells[0].text = '字段'
-        hdr_cells[1].text = '测试要求'
-        hdr_cells[2].text = '实测值'
-        for cell in hdr_cells:
-            set_cell_shading(cell, 'D9E2F3')
-        
-        # 数据行
-        for i, field in enumerate(abs_test_fields):
-            row_cells = curve_table.rows[i + 1].cells
-            row_cells[0].text = field
-            row_cells[1].text = curve_data.get('requirements', {}).get(field, '【待填写】')
-            row_cells[2].text = curve_data.get('measured', {}).get(field, '【待填写】')
+        # 检查是否为新格式
+        if 'test_items' in curve_data:
+            test_conditions = curve_data.get('test_conditions', {})
+            
+            doc.add_paragraph('测试条件：', style='Heading 4')
+            cond_para = doc.add_paragraph()
+            cond_para.add_run(f"• 测试路面：{test_conditions.get('测试路面', '【待填写】')}\n")
+            cond_para.add_run(f"• 弯道半径：{test_conditions.get('弯道半径', '【待填写】')}m\n")
+            cond_para.add_run(f"• 路面附着系数：{test_conditions.get('路面附着系数', '【待填写】')}\n")
+            cond_para.add_run(f"• 测试环境：温度{test_conditions.get('测试温度', '【待填写】')}℃，湿度{test_conditions.get('测试湿度', '【待填写】')}%\n")
+            
+            doc.add_paragraph('测试结果记录表：', style='Heading 4')
+            
+            test_items = curve_data.get('test_items', [])
+            total_rows = sum(len(item.get('test_runs', [])) + 1 for item in test_items) + 2
+            
+            table = doc.add_table(rows=total_rows, cols=9)
+            table.style = 'Table Grid'
+            
+            headers = ['测试项目\n(车速)', '测试\n序号', '平均减速度\n(m/s²)', '制动距离\n(m)', 
+                      '减速度相邻\n峰谷差值(m/s²)', '转向修正角\n(deg)', '车轮抱死\n时间(s)', 
+                      '附着系数\n利用率(%)', '结论']
+            hdr_cells = table.rows[0].cells
+            for i, header in enumerate(headers):
+                hdr_cells[i].text = header
+                set_cell_shading(hdr_cells[i], 'D9E2F3')
+            
+            row_idx = 1
+            for item in test_items:
+                speed = item.get('车速', '【待填写】')
+                test_runs = item.get('test_runs', [])
+                average = item.get('average', {})
+                
+                for run in test_runs:
+                    cells = table.rows[row_idx].cells
+                    cells[0].text = f"{speed} km/h" if run.get('序号') == 1 else ''
+                    cells[1].text = str(run.get('序号', ''))
+                    cells[2].text = str(run.get('平均减速度', ''))
+                    cells[3].text = str(run.get('制动距离', ''))
+                    cells[4].text = str(run.get('减速度峰谷差值', ''))
+                    cells[5].text = str(run.get('转向修正角', ''))
+                    cells[6].text = str(run.get('车轮抱死时间', ''))
+                    cells[7].text = str(run.get('附着系数利用率', ''))
+                    cells[8].text = run.get('结论', '')
+                    row_idx += 1
+                
+                cells = table.rows[row_idx].cells
+                cells[0].text = ''
+                cells[1].text = '平均'
+                cells[2].text = str(average.get('平均减速度', ''))
+                cells[3].text = str(average.get('制动距离', ''))
+                cells[4].text = str(average.get('减速度峰谷差值', ''))
+                cells[5].text = str(average.get('转向修正角', ''))
+                cells[6].text = str(average.get('车轮抱死时间', ''))
+                cells[7].text = str(average.get('附着系数利用率', ''))
+                cells[8].text = average.get('结论', '')
+                for cell in cells:
+                    for paragraph in cell.paragraphs:
+                        for run in paragraph.runs:
+                            run.bold = True
+                row_idx += 1
+            
+            requirements = test_items[0].get('requirements', {}) if test_items else {}
+            cells = table.rows[row_idx].cells
+            cells[0].text = '要求值'
+            cells[1].text = '-'
+            cells[2].text = requirements.get('平均减速度', '【待填写】')
+            cells[3].text = requirements.get('制动距离', '【待填写】')
+            cells[4].text = requirements.get('减速度峰谷差值', '【待填写】')
+            cells[5].text = requirements.get('转向修正角', '【待填写】')
+            cells[6].text = requirements.get('车轮抱死时间', '【待填写】')
+            cells[7].text = requirements.get('附着系数利用率', '【待填写】')
+            cells[8].text = '通过'
+            for cell in cells:
+                set_cell_shading(cell, 'FFF2CC')
+            
+            subjective = curve_data.get('subjective_evaluation', '【待填写】')
+            doc.add_paragraph(f"\n主观评价：{subjective}")
+        else:
+            # 旧格式兼容
+            abs_test_fields = [
+                '测试路面', '测试项目', '测试次数', '平均减速度(m/s²)',
+                '制动距离(m)', '减速度相邻峰谷差值(m/s²)', '转向修正角(deg)',
+                '单次循环车轮滑移率抱死时间(s)', '路面附着系数', '附着系数利用率',
+                '主观评分', '主观评价', '结论'
+            ]
+            
+            curve_table = doc.add_table(rows=len(abs_test_fields) + 1, cols=3)
+            curve_table.style = 'Table Grid'
+            
+            hdr_cells = curve_table.rows[0].cells
+            hdr_cells[0].text = '字段'
+            hdr_cells[1].text = '测试要求'
+            hdr_cells[2].text = '实测值'
+            for cell in hdr_cells:
+                set_cell_shading(cell, 'D9E2F3')
+            
+            for i, field in enumerate(abs_test_fields):
+                row_cells = curve_table.rows[i + 1].cells
+                row_cells[0].text = field
+                row_cells[1].text = curve_data.get('requirements', {}).get(field, '【待填写】')
+                row_cells[2].text = curve_data.get('measured', {}).get(field, '【待填写】')
     else:
-        # 空白模板表格
-        curve_table = doc.add_table(rows=len(abs_test_fields) + 1, cols=2)
-        curve_table.style = 'Table Grid'
+        doc.add_paragraph('测试条件：', style='Heading 4')
+        doc.add_paragraph('• 测试路面：【待填写】\n• 弯道半径：【待填写】m\n• 路面附着系数：【待填写】\n• 测试环境：温度【待填写】℃，湿度【待填写】%')
         
-        # 表头
-        hdr_cells = curve_table.rows[0].cells
-        hdr_cells[0].text = '字段'
-        hdr_cells[1].text = '测试要求'
-        for cell in hdr_cells:
-            set_cell_shading(cell, 'D9E2F3')
+        doc.add_paragraph('测试结果记录表：', style='Heading 4')
+        table = doc.add_table(rows=11, cols=9)
+        table.style = 'Table Grid'
         
-        # 数据行
-        for i, field in enumerate(abs_test_fields):
-            row_cells = curve_table.rows[i + 1].cells
-            row_cells[0].text = field
-            row_cells[1].text = '【待填写】'
+        headers = ['测试项目\n(车速)', '测试\n序号', '平均减速度\n(m/s²)', '制动距离\n(m)', 
+                  '减速度相邻\n峰谷差值(m/s²)', '转向修正角\n(deg)', '车轮抱死\n时间(s)', 
+                  '附着系数\n利用率(%)', '结论']
+        hdr_cells = table.rows[0].cells
+        for i, header in enumerate(headers):
+            hdr_cells[i].text = header
+            set_cell_shading(hdr_cells[i], 'D9E2F3')
+        
+        for row in table.rows[1:]:
+            for cell in row.cells:
+                cell.text = '【待填写】'
+        
+        doc.add_paragraph('\n主观评价：【待填写】')
     
     add_heading_with_number(doc, '5.2 TCS测试结果', 2)
     

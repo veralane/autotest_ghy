@@ -1,187 +1,58 @@
-# 测试数据格式定义
-
-本文档定义了整车功能性能测试报告的测试数据JSON格式。
-
-## 数据结构
-
-```json
 {
-  "project_name": "项目名称",
+  "project_name": "XX车型ABS/TCS功能性能测试",
   "report_id": "RPT-2026-001",
-  "report_date": "2026-04-04",
-  
-  "foreword": "前言内容...",
-  "overview": "概述内容...",
-  "test_object": "测试对象描述...",
-  "test_objectives": ["目标1", "目标2"],
-  "test_period": "2026-03-01 至 2026-04-04",
-  
-  "software_version": "V2.1.0",
-  "hardware_version": "HW-1.0",
-  "firmware_version": "FW-1.2.3",
-  "version_change": "版本变更说明...",
-  
-  "test_site": "测试场地描述",
-  "test_equipment": "测试设备列表",
-  "test_tools": "测试工具列表",
-  "environment": "温度: 25°C, 湿度: 60%",
-  
-  "test_design_refs": [
-    "测试用例文档：XXX-TEST-CASE-001",
-    "测试规范文档：XXX-TEST-SPEC-001"
+  "report_date": "2026-04-08",
+  "foreword": "本报告旨在记录XX车型ABS及TCS系统的功能性能测试的执行情况及测试结果，为产品验收和质量评估提供依据。\n\n本报告依据以下标准/规范编写：\n• GB 12676-2014《汽车制动系统技术要求》\n• GB/T 13594-2003《汽车防抱制动系统性能要求和试验方法》\n• 企业内部测试规范",
+  "test_object": "XX车型（配置：XXX发动机、XXX变速箱、ABS版本V2.1.0）",
+  "test_objectives": [
+    "验证ABS系统在各种路面条件下的性能",
+    "验证TCS系统在低附着路面的牵引力控制效果",
+    "评估系统响应时间和控制精度",
+    "验证系统安全性和可靠性"
   ],
-  
+  "test_period": "2026年3月15日 - 2026年4月5日",
+  "software_version": "V2.1.0",
+  "hardware_version": "HW-3.2",
+  "firmware_version": "FW-1.5.0",
+  "version_change": "优化ABS控制算法，提升低附着路面性能",
+  "test_site": "XX汽车试验场",
+  "test_equipment": "VBOX 3i数据采集系统、减速度传感器、方向盘转角传感器",
+  "test_tools": "CANoe总线分析工具、INCA标定工具",
+  "environment": "温度15-25℃，湿度40-60%",
+  "test_design_refs": [
+    "测试用例文档：TC-ABS-2026-001",
+    "测试规范文档：SPEC-ABS-2026-001",
+    "需求规格说明：REQ-ABS-2026-001"
+  ],
   "pass_criteria": [
     "功能通过准则：所有功能测试用例100%通过",
-    "性能指标要求：响应时间≤100ms"
+    "性能指标要求：平均减速度≥8.0 m/s²（干沥青路面）",
+    "安全性要求：无车轮抱死、无方向失控"
   ],
-  
-  "total_cases": 100,
-  "passed_cases": 98,
+  "total_cases": 45,
+  "passed_cases": 43,
   "failed_cases": 2,
-  "conclusion": "通过",
-  
+  "conclusion": "有条件通过",
   "risks": [
     {
-      "description": "风险描述",
-      "level": "高/中/低",
-      "mitigation": "规避措施",
-      "status": "已解决/进行中/待处理"
+      "description": "低温环境下ABS响应时间略有延迟",
+      "level": "低",
+      "mitigation": "优化控制参数",
+      "status": "跟踪中"
+    },
+    {
+      "description": "对开路面制动时方向稳定性需改进",
+      "level": "中",
+      "mitigation": "调整制动力分配策略",
+      "status": "已解决"
     }
   ],
-  
-  "abs_results": [
-    {
-      "case_id": "ABS-001",
-      "test_item": "测试项目名称",
-      "expected": "预期结果",
-      "actual": "实际结果",
-      "conclusion": "通过/失败"
-    }
-  ],
-  
-  "tcs_results": [
-    {
-      "case_id": "TCS-001",
-      "test_item": "测试项目名称",
-      "expected": "预期结果",
-      "actual": "实际结果",
-      "conclusion": "通过/失败"
-    }
-  ]
-}
-```
-
-## 字段说明
-
-### 基本信息
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| project_name | string | 是 | 项目名称 |
-| report_id | string | 是 | 报告编号 |
-| report_date | string | 是 | 报告日期 (YYYY-MM-DD) |
-
-### 前言和概述
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| foreword | string | 否 | 前言内容 |
-| overview | string | 否 | 概述内容 |
-| test_object | string | 否 | 测试对象描述 |
-| test_objectives | array | 否 | 测试目标列表 |
-| test_period | string | 否 | 测试周期 |
-
-### 版本信息
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| software_version | string | 否 | 软件版本号 |
-| hardware_version | string | 否 | 硬件版本号 |
-| firmware_version | string | 否 | 固件版本号 |
-| version_change | string | 否 | 版本变更说明 |
-
-### 测试环境
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| test_site | string | 否 | 测试场地 |
-| test_equipment | string | 否 | 测试设备 |
-| test_tools | string | 否 | 测试工具 |
-| environment | string | 否 | 环境条件 |
-
-### 测试结论
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| total_cases | number | 否 | 测试用例总数 |
-| passed_cases | number | 否 | 通过用例数 |
-| failed_cases | number | 否 | 失败用例数 |
-| conclusion | string | 否 | 测试结论 |
-
-### 风险信息
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| risks | array | 否 | 风险列表 |
-| risks[].description | string | 是 | 风险描述 |
-| risks[].level | string | 是 | 风险等级 (高/中/低) |
-| risks[].mitigation | string | 是 | 规避措施 |
-| risks[].status | string | 是 | 状态 |
-
-### ABS测试结果
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| abs_tests | object | 是 | ABS测试结果集合 |
-| abs_tests.test_conditions | object | 是 | 测试条件信息 |
-| abs_tests.test_items | array | 是 | 测试项目列表（按车速分组） |
-
-#### ABS测试条件字段
-
-| 字段名 | 类型 | 说明 |
-|--------|------|------|
-| 测试路面 | string | 测试路面类型（干沥青/湿沥青/对开路面等） |
-| 路面附着系数 | number | 路面附着系数 |
-| 弯道半径 | number | 弯道制动时的弯道半径（仅弯道测试） |
-| 测试温度 | number | 测试环境温度(℃) |
-| 测试湿度 | number | 测试环境湿度(%) |
-
-#### ABS测试项目字段定义
-
-每个测试项目（按车速分组）包含以下字段：
-
-| 字段名 | 类型 | 说明 |
-|--------|------|------|
-| 车速 | number | 测试车速(km/h) |
-| test_runs | array | 测试运行结果数组（包含3次测试） |
-| average | object | 三次测试的平均结果 |
-| requirements | object | 该测试项目的要求值 |
-
-#### 单次测试运行结果字段
-
-| 字段名 | 类型 | 说明 |
-|--------|------|------|
-| 序号 | number | 测试序号(1-3) |
-| 平均减速度 | number | 制动过程平均减速度(m/s²) |
-| 制动距离 | number | 制动距离(m) |
-| 减速度峰谷差值 | number | 减速度相邻峰谷差值(m/s²) |
-| 转向修正角 | number | 转向修正角度(deg) |
-| 车轮抱死时间 | number | 单次循环车轮滑移率抱死时间(s) |
-| 附着系数利用率 | number | 附着系数利用率(%) |
-| 主观评分 | number | 主观评分(1-10分) |
-| 结论 | string | 测试结论(通过/失败) |
-
-#### ABS测试结果数据结构（新格式）
-
-```json
-{
   "abs_straight_braking": {
     "test_conditions": {
       "测试路面": "干沥青路面",
       "路面附着系数": 0.85,
-      "测试温度": 25,
-      "测试湿度": 60
+      "测试温度": 22,
+      "测试湿度": 55
     },
     "test_items": [
       {
@@ -356,15 +227,15 @@
         }
       }
     ],
-    "subjective_evaluation": "制动过程平稳，方向控制良好，ABS介入及时有效"
+    "subjective_evaluation": "制动过程平稳，方向控制良好，ABS介入及时有效，各车速下制动性能稳定"
   },
   "abs_curve_braking": {
     "test_conditions": {
       "测试路面": "干沥青路面",
       "路面附着系数": 0.82,
       "弯道半径": 50,
-      "测试温度": 25,
-      "测试湿度": 60
+      "测试温度": 22,
+      "测试湿度": 55
     },
     "test_items": [
       {
@@ -482,134 +353,29 @@
         }
       }
     ],
-    "subjective_evaluation": "弯道制动过程稳定，轨迹偏差小，方向控制良好"
-  }
-}
-```
-
-### TCS测试结果
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| tcs_results | array | 否 | TCS测试结果列表 |
-| results[].case_id | string | 是 | 用例编号 |
-| results[].test_item | string | 是 | 测试项目 |
-| results[].expected | string | 是 | 预期结果 |
-| results[].actual | string | 是 | 实际结果 |
-| results[].conclusion | string | 是 | 结论 (通过/失败) |
-
-## 示例数据文件
-
-```json
-{
-  "project_name": "XX车型ABS/TCS功能测试",
-  "report_id": "RPT-2026-001",
-  "report_date": "2026-04-04",
-  
-  "foreword": "本报告记录了XX车型ABS和TCS功能性能测试的执行情况及测试结果。",
-  "test_object": "XX车型，配置：XXX",
-  "test_objectives": [
-    "验证ABS功能在各种路面条件下的性能",
-    "验证TCS功能在低附着路面的性能"
-  ],
-  "test_period": "2026-03-01 至 2026-04-04",
-  
-  "software_version": "V2.1.0",
-  "hardware_version": "HW-1.0",
-  "firmware_version": "FW-1.2.3",
-  
-  "test_site": "XX试验场",
-  "test_equipment": "数据采集系统、测速设备",
-  "environment": "温度: 15-25°C, 湿度: 40-70%",
-  
-  "total_cases": 50,
-  "passed_cases": 48,
-  "failed_cases": 2,
-  "conclusion": "有条件通过",
-  
-  "risks": [
-    {
-      "description": "低温环境下ABS响应时间略有延迟",
-      "level": "低",
-      "mitigation": "已优化控制策略",
-      "status": "已解决"
-    }
-  ],
-  
-  "abs_straight_braking": {
-    "requirements": {
-      "测试路面": "干沥青路面",
-      "测试项目": "直线制动",
-      "测试次数": "≥3次",
-      "平均减速度(m/s²)": "≥8.0",
-      "制动距离(m)": "≤40",
-      "减速度相邻峰谷差值(m/s²)": "≤2.0",
-      "转向修正角(deg)": "≤5",
-      "单次循环车轮滑移率抱死时间(s)": "≤0.1",
-      "路面附着系数": "≥0.8",
-      "附着系数利用率": "≥85%",
-      "主观评分": "≥7",
-      "主观评价": "制动稳定，方向可控",
-      "结论": "通过"
-    },
-    "measured": {
-      "测试路面": "干沥青路面",
-      "测试项目": "直线制动",
-      "测试次数": "5",
-      "平均减速度(m/s²)": "8.5",
-      "制动距离(m)": "38.2",
-      "减速度相邻峰谷差值(m/s²)": "1.5",
-      "转向修正角(deg)": "3.2",
-      "单次循环车轮滑移率抱死时间(s)": "0.08",
-      "路面附着系数": "0.85",
-      "附着系数利用率": "89%",
-      "主观评分": "8",
-      "主观评价": "制动过程平稳，方向控制良好",
-      "结论": "通过"
-    }
+    "subjective_evaluation": "弯道制动过程稳定，轨迹偏差小，方向控制良好，ABS在弯道工况下表现优异"
   },
-  
-  "abs_curve_braking": {
-    "requirements": {
-      "测试路面": "干沥青路面",
-      "测试项目": "弯道制动",
-      "测试次数": "≥3次",
-      "平均减速度(m/s²)": "≥7.0",
-      "制动距离(m)": "≤45",
-      "减速度相邻峰谷差值(m/s²)": "≤2.5",
-      "转向修正角(deg)": "≤8",
-      "单次循环车轮滑移率抱死时间(s)": "≤0.15",
-      "路面附着系数": "≥0.8",
-      "附着系数利用率": "≥80%",
-      "主观评分": "≥7",
-      "主观评价": "弯道制动稳定，轨迹保持良好",
-      "结论": "通过"
-    },
-    "measured": {
-      "测试路面": "干沥青路面",
-      "测试项目": "弯道制动",
-      "测试次数": "4",
-      "平均减速度(m/s²)": "7.2",
-      "制动距离(m)": "42.5",
-      "减速度相邻峰谷差值(m/s²)": "2.1",
-      "转向修正角(deg)": "5.8",
-      "单次循环车轮滑移率抱死时间(s)": "0.12",
-      "路面附着系数": "0.82",
-      "附着系数利用率": "83%",
-      "主观评分": "7.5",
-      "主观评价": "弯道制动过程稳定，轨迹偏差小",
-      "结论": "通过"
-    }
-  },
-  
   "tcs_results": [
     {
       "case_id": "TCS-001",
       "test_item": "低附着路面起步",
-      "expected": "车轮不打滑",
-      "actual": "车轮轻微打滑后恢复",
+      "expected": "车轮无明显打滑，车辆平稳起步",
+      "actual": "车轮轻微打滑后迅速恢复，起步平稳",
+      "conclusion": "通过"
+    },
+    {
+      "case_id": "TCS-002",
+      "test_item": "对开路面加速",
+      "expected": "车辆保持直线行驶，无明显跑偏",
+      "actual": "车辆保持直线，方向稳定",
+      "conclusion": "通过"
+    },
+    {
+      "case_id": "TCS-003",
+      "test_item": "湿滑路面急加速",
+      "expected": "TCS及时介入，防止车轮打滑",
+      "actual": "TCS介入及时，车轮未出现持续打滑",
       "conclusion": "通过"
     }
   ]
 }
-```
