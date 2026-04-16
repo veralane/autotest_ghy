@@ -1,0 +1,115 @@
+{
+  "_comment": "信号映射配置 - 定义CAN信号/数据源到JSON字段的映射关系。配置信号时修改此文件。",
+
+  "signal_sources": {
+    "_comment": "定义信号来源",
+    "can_channel": "CAN1",
+    "data_file": "【数据文件路径】",
+    "sampling_rate_hz": 100,
+    "dbc_file": "【DBC文件路径，可选，用于信号解码】"
+  },
+
+  "event_detection": {
+    "_comment": "制动事件自动检测配置",
+    "brake_trigger_signal": "BrakePedal",
+    "brake_trigger_threshold": 0.5,
+    "decel_trigger_signal": "VehicleDecel",
+    "decel_trigger_threshold": -2.0,
+    "speed_signal": "VehicleSpeed",
+    "stop_speed_threshold": 1.0,
+    "min_duration_s": 1.0,
+    "speed_bands": [
+      { "label": "50",  "min": 45, "max": 55 },
+      { "label": "80",  "min": 75, "max": 85 },
+      { "label": "100", "min": 95, "max": 105 }
+    ],
+    "max_runs_per_speed": 3
+  },
+
+  "signal_mappings": {
+    "_comment": "CAN信号名 → JSON数据字段的映射。将null替换为实际MF4中的信号名。",
+
+    "common": {
+      "_comment": "通用信号（所有测试项目共用）",
+      "VehicleSpeed":    { "signal": null, "unit": "km/h",  "description": "车速" },
+      "VehicleDecel":    { "signal": null, "unit": "m/s²",  "description": "纵向减速度" },
+      "SteeringAngle":   { "signal": null, "unit": "deg",   "description": "方向盘转角" },
+      "BrakePedal":      { "signal": null, "unit": "-",     "description": "刹车踏板状态（0/1）" },
+      "RoadMu":          { "signal": null, "unit": "-",     "description": "路面附着系数估算值" },
+      "WheelSlip_FL":    { "signal": null, "unit": "-",     "description": "左前轮滑移率" },
+      "WheelSlip_FR":    { "signal": null, "unit": "-",     "description": "右前轮滑移率" },
+      "WheelSlip_RL":    { "signal": null, "unit": "-",     "description": "左后轮滑移率" },
+      "WheelSlip_RR":    { "signal": null, "unit": "-",     "description": "右后轮滑移率" }
+    },
+
+    "abs_straight_braking": {
+      "_comment": "干沥青直线制动 - 指标计算所需的信号",
+      "平均减速度":     { "signal": null, "unit": "m/s²",  "description": "制动过程平均减速度", "computed_from": "VehicleDecel" },
+      "制动距离":       { "signal": null, "unit": "m",     "description": "制动开始到停止的距离", "computed_from": "VehicleSpeed" },
+      "减速度峰谷差值": { "signal": null, "unit": "m/s²",  "description": "减速度相邻峰谷差值", "computed_from": "VehicleDecel" },
+      "转向修正角":     { "signal": null, "unit": "deg",   "description": "方向盘修正角度", "computed_from": "SteeringAngle" },
+      "车轮抱死时间":   { "signal": null, "unit": "s",     "description": "单次循环车轮滑移率抱死时间", "computed_from": "WheelSlip" },
+      "附着系数利用率": { "signal": null, "unit": "%",     "description": "路面附着系数利用效率", "computed_from": "VehicleDecel+RoadMu" },
+      "主观评分":       { "signal": null, "unit": "1-10",  "description": "驾驶员主观评价（人工填写）" }
+    },
+
+    "abs_curve_braking": {
+      "_comment": "干沥青弯道制动 - 与直线制动共用信号，额外需要横摆角速度",
+      "YawRate":         { "signal": null, "unit": "deg/s", "description": "横摆角速度" },
+      "LateralAccel":    { "signal": null, "unit": "m/s²",  "description": "侧向加速度" }
+    },
+
+    "abs_wet_straight_braking": {
+      "_comment": "湿沥青直线制动 - 与干沥青直线制动共用信号"
+    },
+
+    "abs_split_braking": {
+      "_comment": "对开路面制动 - 需要左右轮独立信号",
+      "BrakePress_FL":   { "signal": null, "unit": "bar",   "description": "左前轮制动压力" },
+      "BrakePress_FR":   { "signal": null, "unit": "bar",   "description": "右前轮制动压力" },
+      "BrakePress_RL":   { "signal": null, "unit": "bar",   "description": "左后轮制动压力" },
+      "BrakePress_RR":   { "signal": null, "unit": "bar",   "description": "右后轮制动压力" }
+    },
+
+    "tcs_results": {
+      "_comment": "TCS测试 - 需要驱动轮滑移率和发动机扭矩信号",
+      "EngineTorque":    { "signal": null, "unit": "Nm",    "description": "发动机扭矩" },
+      "ThrottlePos":     { "signal": null, "unit": "%",     "description": "油门踏板位置" },
+      "TCS_Active":      { "signal": null, "unit": "-",     "description": "TCS激活状态（0/1）" }
+    }
+  },
+
+  "computed_signals": {
+    "_comment": "需要从原始信号计算得出的指标，定义计算公式",
+    "平均减速度": {
+      "formula": "mean(abs(VehicleDecel[start:end]))",
+      "input_signals": ["VehicleDecel"],
+      "description": "对减速度在制动起止时间内取绝对值平均"
+    },
+    "制动距离": {
+      "formula": "integral(VehicleSpeed[start:end]) / 3.6",
+      "input_signals": ["VehicleSpeed"],
+      "description": "对车速在制动起止时间内积分，km/h转m/s"
+    },
+    "减速度峰谷差值": {
+      "formula": "max(peak_to_valley(VehicleDecel))",
+      "input_signals": ["VehicleDecel"],
+      "description": "减速度相邻峰谷差的最大值"
+    },
+    "转向修正角": {
+      "formula": "max(abs(SteeringAngle[start:end]))",
+      "input_signals": ["SteeringAngle"],
+      "description": "制动区间内方向盘最大偏转角"
+    },
+    "车轮抱死时间": {
+      "formula": "sum(WheelSlip > 0.8) * dt",
+      "input_signals": ["WheelSlip_FL", "WheelSlip_FR", "WheelSlip_RL", "WheelSlip_RR"],
+      "description": "任一车轮滑移率超过0.8的累计时间"
+    },
+    "附着系数利用率": {
+      "formula": "avg_decel / (mu * 9.81) * 100",
+      "input_signals": ["VehicleDecel", "RoadMu"],
+      "description": "平均减速度与路面附着系数对应的最大减速度之比"
+    }
+  }
+}
